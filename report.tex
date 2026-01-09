@@ -1,0 +1,635 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{array} 
+\geometry{a4paper, margin=1in}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+\usepackage{hyperref}
+\usepackage{xurl} 
+\usepackage{enumitem}
+\usepackage{titlesec} 
+\usepackage{enumitem} 
+\usepackage{float}
+
+% Prevent overfull lines in long headings/TOC entries
+\setlength{\emergencystretch}{2em}
+
+%------------------------------------------------------------
+%	FONT SIZES
+%------------------------------------------------------------
+% Increase section and subsection sizes
+\titleformat{\section}
+    {\normalfont\LARGE\bfseries\raggedright}{\thesection}{1em}{}
+\titleformat{\subsection}
+    {\normalfont\large\bfseries\raggedright}{\thesubsection}{1em}{}
+
+%----------------------------------------------------------------------------
+%	COLORS
+%----------------------------------------------------------------------------
+% Updated colors for better distinction
+\definecolor{propPink}{RGB}{200, 50, 180}       % Darker, more vivid Purplish-Pink
+\definecolor{defOrange}{RGB}{230, 90, 20}       % Vibrant Burnt Orange
+\definecolor{defBg}{RGB}{255, 250, 235}         % Very light cream
+\definecolor{lemmaGreen}{RGB}{0, 128, 0}        % Standard Dark Green
+\definecolor{notationBlue}{RGB}{0, 100, 180}    % Stronger Blue
+\definecolor{corTeal}{RGB}{0, 128, 128}         % Teal for Corollary
+\definecolor{protoGray}{gray}{0.3}              % Dark Gray for Protocols
+\definecolor{proofYellow}{RGB}{253, 216, 8}     %Yellow for Proofs
+
+%------------------------------------------------------------
+%	BOX DEFINITIONS
+%------------------------------------------------------------
+% Generic style for textbook-like boxes
+\tcbset{
+    textbook/.style={
+        enhanced,
+        sharp corners,
+        boxrule=1pt,
+        fonttitle=\bfseries\large,
+        colbacktitle=black,
+        boxed title style={sharp corners, boxrule=0pt},
+        titlerule=0mm,
+        breakable,
+        top=2mm, bottom=2mm, left=2mm, right=2mm
+    }
+}
+
+% PROPOSITION BOX
+\newtcolorbox[auto counter, number within=section]{proposition}[2][]{%
+    textbook,
+    colback=white,
+    colframe=propPink,
+    coltitle=white,
+    colbacktitle=propPink,
+    title=Proposition~\thetcbcounter\ #2,
+    #1
+}
+
+% DEFINITION BOX
+\newtcolorbox[auto counter, number within=section]{definition}[2][]{%
+    textbook,
+    colback=defBg,
+    colframe=defOrange,
+    coltitle=white,
+    colbacktitle=defOrange,
+    title=Definition~\thetcbcounter\ #2,
+    #1
+}
+
+% LEMMA BOX
+\newtcolorbox[auto counter, number within=section]{lemma}[2][]{%
+    textbook,
+    colback=white,
+    colframe=lemmaGreen,
+    coltitle=white,
+    colbacktitle=lemmaGreen,
+    title=Lemma~\thetcbcounter\ #2,
+    #1
+}
+
+% NOTATION BOX
+\newtcolorbox[auto counter, number within=section]{notation}[2][]{%
+    textbook,
+    colback=white,
+    colframe=notationBlue,
+    coltitle=white,
+    colbacktitle=notationBlue,
+    title=Notation~\thetcbcounter\ #2,
+    #1
+}
+
+% COROLLARY BOX
+\newtcolorbox[auto counter, number within=section]{corollary}[2][]{%
+    textbook,
+    colback=white,
+    colframe=corTeal,
+    coltitle=white,
+    colbacktitle=corTeal,
+    title=Corollary~\thetcbcounter\ #2,
+    #1
+}
+
+% PROTOCOL BOX
+\newtcolorbox[auto counter, number within=section]{protocol}[2][]{%
+    textbook,
+    colback=white,
+    colframe=protoGray,
+    coltitle=white,
+    colbacktitle=protoGray,
+    title=Protocol~\thetcbcounter\ #2,
+    #1
+}
+
+%------------------------------------------------------------
+%	DOCUMENT INFO
+%------------------------------------------------------------
+\title{\textbf{\Huge CMPE300 - Project 3: 
+\\ \vspace{0.2em} Interactive Proof Systems} \\ \vspace{0.5em} \Huge Analysis and Proofs Report}
+\author{\Large Ömer Ozan Mart (ID: 2022400267) 
+\\ \Large Yüksel Ege Boyacı (ID: 2023400315)}
+\date{\Large \today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\newpage
+\tableofcontents
+\newpage
+
+%------------------------------------------------------------
+%	Q1
+%------------------------------------------------------------
+\section{Question 1: Interactive Algorithm for 3-Coloring}
+
+\subsection{Part a: Definitions}
+
+To formalize the problem of 3-Coloring, we begin by defining what constitutes a valid coloring for a graph.
+
+\begin{definition}{3-Colorability}
+    Let $G=(V,E)$ be a graph. A \textit{3-coloring} of $G$ is a function $c: V \to \{0, 1, 2\}$ such that for every edge $(u,v) \in E$, the endpoints have distinct colors, i.e., $c(u) \neq c(v)$. 
+    
+    A graph $G$ is said to be \textit{3-colorable} if such a valid function $c$ exists.
+\end{definition}
+
+\begin{definition}{The 3COLOR Problem}
+    The decision problem \textsc{3COLOR} consists of determining whether a given graph supports a valid 3-coloring. Formally:
+    \[
+        \mathrm{3COLOR} = \{ \langle G \rangle \mid G \text{ is a 3-colorable graph} \}
+    \]
+    This problem is known to be NP-complete.
+\end{definition}
+
+\subsection{Part b: The Zero-Knowledge Protocol}
+
+We describe the standard Zero-Knowledge Interactive Proof (ZKIP) for 3-Colorability. The Prover ($P$) aims to convince the Verifier ($V$) that $G$ is 3-colorable without revealing the specific coloring $c$.
+
+\begin{notation}{Protocol Setup}
+    \begin{itemize}
+        \item \textbf{Input:} A graph $G=(V,E)$ with $|V|=n$ and $|E|=m$.
+        \item \textbf{Prover's Secret:} A valid 3-coloring $c: V \to \{0, 1, 2\}$.
+        \item \textbf{Commitment Scheme:} A secure commitment scheme $Com(x, r)$. It must be \textit{hiding} (V learns nothing about $x$ from the commitment) and \textit{binding} (P cannot change $x$ after committing).
+    \end{itemize}
+\end{notation}
+
+\begin{protocol}{Interactive Protocol for 3-Coloring}
+    The authentication proceeds in multiple independent rounds. In a single round:
+    \begin{enumerate}
+        \item \textbf{Commitment:} 
+        The Prover chooses a random permutation $\pi$ over the color space $\{0, 1, 2\}$ uniformly at random (there are $3! = 6$ possible permutations).
+        For every vertex $v \in V$, the Prover computes the permuted color $c'(v) = \pi(c(v))$.
+        The Prover sends commitments to these permuted colors to the Verifier:
+        \[
+            C_v = Com(c'(v), r_v) \quad \forall v \in V
+        \]
+        
+        \item \textbf{Challenge:} 
+        The Verifier selects an edge $e = (u, v) \in E$ uniformly at random and requests the Prover to "open" the colors for $u$ and $v$.
+        
+        \item \textbf{Response:} 
+        The Prover reveals the values $c'(u)$ and $c'(v)$ along with the randomness $r_u, r_v$ needed to verify the commitments $C_u$ and $C_v$.
+        
+        \item \textbf{Verification:} 
+        The Verifier checks two conditions:
+        \begin{itemize}
+            \item The commitments are valid (consistent with revealed values).
+            \item The colors are distinct: $c'(u) \neq c'(v)$.
+        \end{itemize}
+        If both hold, the Verifier accepts the round; otherwise, they reject.
+    \end{enumerate}
+\end{protocol}
+
+\subsection{Part c: Probabilistic Analysis}
+
+We analyze the protocol's properties: Completeness, Soundness, and Zero-Knowledge.
+
+\begin{proposition}{Completeness}
+    If $G$ is 3-colorable and the Prover is honest, the Verifier accepts with probability 1.
+\end{proposition}
+
+\begin{proof}
+    Let $c$ be the valid 3-coloring known to the Prover. By definition, for any edge $(u,v) \in E$, $c(u) \neq c(v)$.
+    Since $\pi$ is a bijection (permutation), it preserves inequality:
+    \[
+        c(u) \neq c(v) \implies \pi(c(u)) \neq \pi(c(v)) \implies c'(u) \neq c'(v)
+    \]
+    Consequently, regardless of which random permutation $\pi$ is chosen and which edge $e$ the Verifier picks, the revealed colors will always be distinct. The Prover can honestly open the commitments, ensuring the Verifier accepts every round.
+\end{proof}
+
+\begin{proposition}{Soundness}
+    If $G$ is not 3-colorable, any cheating Prover $P^*$ can convince the Verifier with probability at most $1 - \frac{1}{|E|}$ per round.
+\end{proposition}
+
+\begin{proof}
+    Suppose $G$ is not 3-colorable. This implies that for \textit{any} coloring assignment $c': V \to \{0,1,2\}$ the Prover commits to, there exists at least one "bad" edge $(u, v) \in E$ such that $c'(u) = c'(v)$. If no such edge existed, $c'$ would be a valid 3-coloring, which contradicts the assumption.
+    
+    Let $m = |E|$. In the Challenge step, the Verifier picks an edge uniformly at random from the $m$ edges.
+    \begin{itemize}
+        \item If the Verifier picks a "bad" edge, they will see $c'(u) = c'(v)$ and reject.
+        \item The probability of picking such an edge is at least $1/m$.
+    \end{itemize}
+    
+    Thus, the probability of the Prover successfully cheating in one round is:
+    \[
+        \Pr[\text{Verifier accepts}] \le 1 - \frac{1}{m}
+    \]
+    \textbf{Effect of Repetition:} By repeating the protocol $k$ times independently, the probability that the cheater succeeds in \textit{every} round is:
+    \[
+        \Pr[\text{Total Success}] \le \left(1 - \frac{1}{m}\right)^k
+    \]
+    For $k \approx m^2$, this probability approaches $e^{-m}$, which is negligible.
+\end{proof}
+
+\begin{proposition}{Zero-Knowledge Intuition}
+    The Verifier learns nothing about the original coloring $c$ from the interaction.
+\end{proposition}
+
+\begin{proof}[Intuitive Explanation via Simulation]
+    To prove Zero-Knowledge formally, we rely on the existence of a \textbf{Simulator}. The intuition is that the Verifier's "view" of the interaction can be generated without knowing the secret coloring.
+    
+    In any valid execution, the Verifier sees exactly two values: a pair of distinct colors $(c_i, c_j)$ where $c_i, c_j \in \{0,1,2\}$ and $c_i \neq c_j$.
+    
+    Because the Prover applies a uniform random permutation $\pi$ in every round:
+    \begin{itemize}
+        \item The specific numerical values of the opened colors are uniformly distributed among all valid distinct pairs (e.g., $(0,1), (1,2), (0,2)$, etc.).
+        \item The distribution of colors observed by the Verifier is completely independent of the original coloring $c$.
+    \end{itemize}
+    
+    \textbf{The Simulator Argument:}
+    A simulator could generate an indistinguishable transcript without the witness by:
+    \begin{enumerate}
+        \item Guessing which edge $(u, v)$ the Verifier will challenge.
+        \item Committing to valid distinct colors for $u$ and $v$, and "garbage" (e.g., all 0s) for the rest of the graph. 
+        \item If the Verifier challenges $(u, v)$, the simulator opens the valid commitments. If the Verifier challenges a different edge, the simulator "rewinds" and tries again.
+    \end{enumerate}
+    Since the Verifier cannot distinguish the "garbage" commitments from real ones (due to the hiding property) unless they are opened, and the opened values are just random distinct colors, the interaction leaks zero knowledge about the global structure of the coloring.
+\end{proof}
+
+%------------------------------------------------------------
+%	Q2
+%------------------------------------------------------------
+\section{Question 2: Interactive Algorithm for Graph Isomorphism}
+
+\subsection{Part a: Definitions}
+
+To formally discuss the Graph Isomorphism problem, we first establish the definition of isomorphism between two graphs.
+
+\begin{definition}{Graph Isomorphism}
+    Let $G_1 = (V_1, E_1)$ and $G_2 = (V_2, E_2)$ be two graphs with $|V_1| = |V_2| = n$. The graphs $G_1$ and $G_2$ are said to be \textit{isomorphic}, denoted as $G_1 \cong G_2$, if there exists a bijection (permutation) $\pi: V_1 \to V_2$ such that the edge connectivity is preserved.
+    
+    Formally, for all $u, v \in V_1$:
+    \[
+        (u, v) \in E_1 \iff (\pi(u), \pi(v)) \in E_2
+    \]
+    The bijection $\pi$ is called an \textit{isomorphism} from $G_1$ to $G_2$.
+\end{definition}
+
+\begin{definition}{The GI Problem}
+    The \textit{Graph Isomorphism} (GI) problem is the decision problem of determining whether two finite graphs are isomorphic. We define the language as:
+    \[
+        \mathrm{GI} = \{ (G_1, G_2) \mid G_1 \cong G_2 \}
+    \]
+\end{definition}
+
+\subsection{Part b: The Zero-Knowledge Protocol}
+
+We describe the standard interactive zero-knowledge protocol. The Prover ($P$) wants to convince the Verifier ($V$) that $G_1 \cong G_2$ without revealing the specific isomorphism $\pi$.
+
+\begin{notation}{Protocol Setup}
+    \begin{itemize}
+        \item \textbf{Input:} Two graphs $G_1, G_2$ known to both parties.
+        \item \textbf{Prover's Secret:} An isomorphism $\pi$ such that $G_2 = \pi(G_1)$.
+        \item \textbf{Symmetric Group $S_n$:} The set of all permutations of $n$ vertices.
+    \end{itemize}
+\end{notation}
+
+\begin{protocol}{Interactive Protocol for Graph Isomorphism}
+    The protocol proceeds in rounds. In each round:
+    \begin{enumerate}
+        \item \textbf{Commitment:} The Prover chooses a random permutation $\sigma \in S_n$ uniformly at random. The Prover computes the graph $H = \sigma(G_1)$ (a random isomorphic copy of $G_1$) and sends $H$ to the Verifier.
+        
+        \item \textbf{Challenge:} The Verifier chooses a random bit $b \in \{0, 1\}$ uniformly and sends $b$ to the Prover.
+        
+        \item \textbf{Response:}
+        \begin{itemize}
+            \item If $b = 0$, the Prover sends the permutation $\rho = \sigma$. (Showing $H \cong G_1$)
+            \item If $b = 1$, the Prover sends the permutation $\rho = \sigma \circ \pi^{-1}$. (Showing $H \cong G_2$)
+        \end{itemize}
+        
+        \item \textbf{Verification:}
+        \begin{itemize}
+            \item If $b = 0$, the Verifier checks if $H = \rho(G_1)$.
+            \item If $b = 1$, the Verifier checks if $H = \rho(G_2)$.
+        \end{itemize}
+        If the condition holds, the Verifier accepts the round; otherwise, it rejects.
+    \end{enumerate}
+\end{protocol}
+
+\subsection{Part c: Probabilistic Analysis}
+
+We now analyze the properties of Completeness, Soundness, and Zero-Knowledge for this protocol.
+
+\begin{proposition}{Completeness}
+    If $G_1 \cong G_2$ and the Prover is honest, the Verifier accepts with probability 1.
+\end{proposition}
+
+\begin{proof}
+    The honest Prover knows the isomorphism $\pi: G_1 \to G_2$.
+    \begin{itemize}
+        \item If the challenge is $b=0$, the Prover sends $\rho = \sigma$. Since $H$ was constructed as $H = \sigma(G_1)$, the verification $H = \rho(G_1)$ holds trivially.
+        \item If the challenge is $b=1$, the Prover sends $\rho = \sigma \circ \pi^{-1}$. The Verifier computes $\rho(G_2)$:
+        \[
+            \rho(G_2) = (\sigma \circ \pi^{-1})(G_2) = \sigma(\pi^{-1}(G_2))
+        \]
+        Since $\pi$ is an isomorphism from $G_1$ to $G_2$, $\pi^{-1}$ maps $G_2$ back to $G_1$. Thus $\pi^{-1}(G_2) = G_1$.
+        \[
+            \sigma(G_1) = H
+        \]
+        The verification $H = \rho(G_2)$ holds.
+    \end{itemize}
+    Thus, an honest Prover always convinces the Verifier.
+\end{proof}
+
+\begin{proposition}{Soundness}
+    If $G_1 \not\cong G_2$, any cheating Prover $P^*$ can convince the Verifier with probability at most $1/2$ per round.
+\end{proposition}
+
+\begin{proof}
+    Assume $G_1 \not\cong G_2$. Let $ISO(G)$ denote the set of all graphs isomorphic to $G$. Since isomorphism is an equivalence relation, the sets $ISO(G_1)$ and $ISO(G_2)$ are disjoint ($ISO(G_1) \cap ISO(G_2) = \emptyset$).
+    
+    In step 1, the Prover sends a graph $H$.
+    \begin{itemize}
+        \item If $H \in ISO(G_1)$, the Prover can answer the challenge $b=0$ (providing an isomorphism $G_1 \to H$), but cannot answer $b=1$ because no isomorphism exists between $G_2$ and $H$ (otherwise $G_1 \cong H \cong G_2$, a contradiction).
+        \item If $H \in ISO(G_2)$, the Prover can answer $b=1$, but cannot answer $b=0$.
+        \item If $H$ is in neither set, the Prover fails both challenges.
+    \end{itemize}
+    
+    Since the Prover must commit to $H$ before seeing $b$, and $b$ is chosen uniformly from $\{0, 1\}$, the Prover can anticipate at most one of the two possible challenges correctly.
+    \[
+        \Pr[\text{Verifier Accepts}] \leq \frac{1}{2}
+    \]
+    By repeating the protocol $k$ times independently, the probability of a cheater succeeding in all rounds is at most $(1/2)^k$, which approaches zero exponentially.
+\end{proof}
+
+\begin{proposition}{Zero-Knowledge (Perfect ZK)}
+    The Verifier learns nothing about the isomorphism $\pi$ from the interaction.
+\end{proposition}
+
+\begin{proof}[Intuitive Explanation]
+    To prove zero-knowledge formally, we would construct a simulator, but here we provide the intuition based on the distribution of responses.
+    
+    In every round, the Verifier receives a pair $(H, \rho)$.
+    \begin{itemize}
+        \item If $b=0$, $\rho = \sigma$. Since $\sigma$ is chosen uniformly at random from $S_n$, $\rho$ is a random permutation.
+        \item If $b=1$, $\rho = \sigma \circ \pi^{-1}$. Since $\sigma$ is uniform random and $\pi^{-1}$ is fixed, the composition $\sigma \circ \pi^{-1}$ is also a uniform random permutation over $S_n$.
+    \end{itemize}
+    
+    In both cases, the Verifier sees a graph $H$ and a completely random permutation $\rho$. The distribution of $\rho$ is identical in both cases and independent of $\pi$. Therefore, the Verifier observes no information that could help distinguish $\pi$ from any other permutation, ensuring the property of Zero-Knowledge.
+\end{proof}
+
+\begin{proof}[Proof via Simulation]
+    To prove Zero-Knowledge, we construct a polynomial-time \textbf{Simulator} $S$ that generates a transcript indistinguishable from a real interaction between Prover and Verifier, without knowing the witness $\pi$.
+    
+    \textbf{The Simulator Algorithm:}
+    \begin{enumerate}
+        \item $S$ chooses a random bit $b' \in \{0, 1\}$.
+        \item $S$ chooses a random permutation $\rho' \in S_n$.
+        \item $S$ computes the graph $H' = \rho'(G_{b'})$.
+        \item $S$ outputs the transcript tuple $(H', b', \rho')$.
+    \end{enumerate}
+    
+    \textbf{Analysis of Distributions:}
+    In a real protocol execution:
+    \begin{itemize}
+        \item The verifier picks $b$ uniformly.
+        \item The prover picks $\sigma$ uniformly, so $H$ is a random isomorphic copy of $G_1$ (which is also a random copy of $G_2$ via $\pi$).
+        \item The response $\rho$ is a uniform random permutation.
+    \end{itemize}
+    
+    The Simulator's output distribution is statistically \textbf{identical} to the real execution. Since a simulator can produce the exact same "view" without access to $\pi$, the Verifier cannot possibly extract any information about $\pi$ from the interaction. This property is known as \textbf{Perfect Zero-Knowledge}.
+\end{proof}
+
+\section{Question 3: Trick the Verifier for 3–Coloring}
+
+In this section, we analyze the validity of the 3-coloring interactive proof when the Verifier implementation deviates from the theoretical assumption of uniform randomness.
+
+\subsection{Experiment Setup \& Strategy}
+Experiments were conducted using a "biased" Verifier provided for the assignment. To exploit this bias, we employed the following strategy:
+\begin{enumerate}
+    \item \textbf{Probing:} We first ran the Verifier for 15,000 rounds against a dummy coloring to empirically estimate the probability distribution of edge queries. We identified "hot" edges (frequently queried) and "cold" edges (rarely or never queried). Notably, we observed that \textbf{Node 0} consistently had the highest number of connections and query involvement, leading us to prioritize it during conflict resolution.
+    \item \textbf{Weighted Coloring:} We assigned high weights to "hot" edges and low weights to "cold" edges.
+    \item \textbf{Optimization:} We effectively treated the problem as a "Minimum Weighted Conflict" problem. Using a greedy algorithm with local search, we constructed a coloring that minimized the weight of monochromatic edges. This forces the inevitable "bad" edges (monochromatic edges) to reside almost exclusively on the "cold" edges.
+\end{enumerate}
+
+\subsection{Experimental Results}
+We tested graphs of sizes ranging from $N=204$ to $N=944$. For each graph, we ran the verification 100 times (each trial consisting of 100 rounds) and recorded the acceptance rate.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{experiment_results.png}
+    \caption{Acceptance Rate vs. Graph Size. Despite the coloring being invalid (~22\% bad edges), the acceptance rate remains above 50\% due to the biased verifier.}
+    \label{fig:q3_results}
+\end{figure}
+
+The table below summarizes the key metrics. "Bad Edge Ratio" indicates the percentage of edges that are improperly colored (monochromatic). "Hot Violations" indicates how many of those bad edges correspond to edges actually checked by the Verifier during probing.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+\textbf{Graph Size} & \textbf{Edges} & \textbf{Bad Edges} & \textbf{Bad Ratio} & \textbf{Hot Violations} & \textbf{Acceptance Rate} \\ \hline
+204 & 796 & 184 & 23.1\% & 68 & 0.57 \\ \hline
+241 & 947 & 211 & 22.3\% & 68 & 0.55 \\ \hline
+278 & 1090 & 255 & 23.4\% & 56 & 0.63 \\ \hline
+315 & 1239 & 284 & 22.9\% & 56 & 0.49 \\ \hline
+352 & 1387 & 314 & 22.6\% & 56 & 0.56 \\ \hline
+389 & 1541 & 348 & 22.6\% & 53 & 0.54 \\ \hline
+426 & 1688 & 362 & 21.4\% & 54 & 0.55 \\ \hline
+463 & 1838 & 398 & 21.7\% & 44 & 0.59 \\ \hline
+500 & 1984 & 450 & 22.7\% & 41 & 0.53 \\ \hline
+537 & 2133 & 495 & 23.2\% & 43 & 0.52 \\ \hline
+574 & 2279 & 534 & 23.4\% & 41 & 0.55 \\ \hline
+611 & 2421 & 558 & 23.0\% & 43 & 0.61 \\ \hline
+648 & 2572 & 594 & 23.1\% & 40 & 0.54 \\ \hline
+685 & 2722 & 575 & 21.1\% & 38 & 0.58 \\ \hline
+722 & 2866 & 623 & 21.7\% & 29 & 0.59 \\ \hline
+759 & 3021 & 679 & 22.5\% & 30 & 0.60 \\ \hline
+796 & 3164 & 720 & 22.8\% & 27 & 0.51 \\ \hline
+833 & 3312 & 759 & 22.9\% & 31 & 0.57 \\ \hline
+870 & 3462 & 777 & 22.4\% & 26 & 0.64 \\ \hline
+907 & 3603 & 793 & 22.0\% & 22 & 0.57 \\ \hline
+944 & 3755 & 860 & 22.9\% & 20 & 0.53 \\ \hline
+\end{tabular}
+\caption{Experiment Data highlighting the attack success. Low "Hot Violations" correlate with high Acceptance Rates.}
+\label{tab:q3_data}
+\end{table}
+
+\subsection{Theoretical Analysis}
+
+\subsubsection{Why does this strategy lead to high acceptance rates?}
+The high acceptance rate is a direct consequence of the Verifier's non-uniform distribution.
+Let $E_{bad} \subset E$ be the set of monochromatic edges. The probability that the Verifier detects the cheating in a single round is the probability of choosing an edge $e \in E_{bad}$.
+\[ P(\text{detect}) = \sum_{e \in E_{bad}} P(\text{Verifer picks } e) \]
+Our strategy minimized this sum by ensuring that if $e \in E_{bad}$, then $P(\text{Verifer picks } e) \approx 0$. Even though $|E_{bad}|$ is large (over 20\% of the graph), the probability mass covered by these edges is negligible. Thus, the Verifier rarely looks at the mistakes, leading to a high acceptance rate over 50 rounds.
+
+\subsubsection{Relationship to Uniform Randomness and Soundness}
+This formally demonstrates that the soundness guarantee of Interactive Proofs is heavily dependent on the Verifier's randomness being uniform (or at least unpredictable).
+\begin{proposition}{Soundness under Non-Uniform Verifier}
+    The theoretical soundness error bound $\epsilon \le (1 - \frac{1}{|E|})^k$ relies on the assumption that every edge is chosen with probability $1/|E|$.
+    
+    If the Verifier chooses edges according to a biased distribution $\mathcal{D}$, the effective soundness error becomes:
+    \[ \epsilon_{biased} \le (1 - p_{min})^k \]
+    where $p_{min} = \sum_{e \in E_{bad}} \Pr_{\mathcal{D}}[e]$.
+    
+    If an adversary can construct a coloring such that the bad edges $E_{bad}$ are placed on edges with negligible probability ($\Pr_{\mathcal{D}}[e] \approx 0$), then $p_{min} \to 0$ and $\epsilon_{biased} \to 1$. This implies the Verifier accepts false statements with high probability.
+\end{proposition}
+
+This confirms that \textbf{unpredictable, uniform randomness is a security requirement} for the Verifier.
+
+\subsubsection{Contradiction with Zero-Knowledge?}
+This successful attack does \textbf{not} contradict the theoretical Zero-Knowledge property.
+\begin{itemize}
+    \item \textbf{Zero-Knowledge} protects the \textit{Prover's} secret from the Verifier. It guarantees that the interaction reveals nothing about the witness. A flawed Verifier (like the one in this experiment) might fail to verify correctness, but that does not mean it extracts knowledge.
+    \item \textbf{Soundness vs. Completeness:} This attack breaks \textit{Soundness} (a cheating prover convinces a verifier). It does not affect \textit{Completeness} (an honest prover still succeeds) or \textit{Zero-Knowledge}.
+    \item \textbf{Assumption Violation:} Theoretical proofs assume the protocol is followed correctly. Our experiment shows that a deviation from the protocol (using biased randomness) invalidates the derived guarantees, which is consistent with the theory.
+\end{itemize}
+
+
+%------------------------------------------------------------
+%	Q4
+%------------------------------------------------------------
+\section{Question 4: Building Zero-Knowledge Proofs}
+
+To construct a zero-knowledge proof system for any generic problem in NP, we rely on a standard methodology involving reductions, cryptographic commitments, and probabilistic verification.
+
+\subsection{General Methodology}
+    To build a zero-knowledge proof for a statement $S$ in a language $L \in NP$, we do not design a specific protocol for $L$. Instead, we apply a reduction function $f$ to translate the instance $S$ into an equivalent instance $G$ of an NP-complete problem (e.g., a graph $G$ that is 3-colorable if and only if $S$ is true). By proving that $G$ possesses the required property (e.g., 3-colorability) using a standard zero-knowledge protocol, we indirectly but validly prove the original statement $S$.
+    
+    A fundamental property of the class NP is that any problem within it can be reduced in polynomial time to an NP-complete problem.
+
+    \subsection{Cryptographic Commitments}
+    The Prover cannot reveal the witness (e.g., the full coloring) directly, as this would violate the zero-knowledge property. Instead, the Prover uses a \textit{commitment scheme}. 
+    
+    A commitment scheme acts like a digital envelope:
+    \begin{enumerate}
+        \item \textbf{Hiding:} The Prover places the data (e.g., the color of a vertex) into the commitment. The Verifier sees the commitment but learns nothing about the value inside.
+        \item \textbf{Binding:} Once committed, the Prover is mathematically bound to that value. They cannot change the content of the "envelope" later.
+    \end{enumerate}
+    
+    In the protocol, the Prover commits to a permuted version of the witness (randomizing it to hide the structure) and sends these commitments to the Verifier. When challenged, the Prover "opens" only the specific commitments requested by the Verifier (consistent openings), proving validity locally without revealing global information.
+
+    \subsection{Probabilistic Soundness}
+    This methodology is fundamentally probabilistic because the Verifier does not check the entire proof at once (which would reveal the secret). Instead, the Verifier challenges a random subset of the commitments (e.g., one random edge).
+    
+    \textbf{Soundness Analysis:}
+    \begin{itemize}
+        \item If the statement is false (e.g., the graph is not 3-colorable), any "proof" provided by a cheating Prover must contain at least one flaw (e.g., an edge with matching colors).
+        \item Because the Prover is bound by their commitments \textit{before} the Verifier chooses which edge to check, the Prover cannot predict where the Verifier will look.
+        \item If the Verifier detects the flaw, they reject. Even if the cheater is lucky and the Verifier picks a valid edge, the probability of escaping detection in one round is strictly less than 1.
+        \item By repeating the interaction $k$ times with independent random challenges, the probability of a cheater succeeding in all rounds decreases exponentially (typically approaching $2^{-k}$ or similar). Thus, an honest Verifier will reject a false statement with overwhelmingly high probability.
+    \end{itemize}
+
+%------------------------------------------------------------
+%	Q5
+%------------------------------------------------------------
+\section{Question 5: Interactive Proof for Hamiltonian Path}
+
+Using the methodology of reducing the problem to a commitment-based interactive protocol, we construct a Zero-Knowledge Proof for the Hamiltonian Path problem.
+
+\subsection{Protocol Description}
+\textbf{Protocol Description:}
+Let $G = (V, E)$ be the public graph. The Prover knows a Hamiltonian Path in $G$.
+
+\begin{protocol}{Interactive Protocol for Hamiltonian Path}
+\begin{enumerate}
+    \item \textbf{Commitment:} The Prover chooses a random permutation $\sigma$ of the vertices and constructs a graph $H = \sigma(G)$. The Prover sends cryptographic commitments for the adjacency matrix of $H$ to the Verifier.
+    \item \textbf{Challenge:} The Verifier sends a random bit $b \in \{0, 1\}$.
+    \item \textbf{Response:}
+    \begin{itemize}
+        \item If $b=0$: The Prover opens all commitments to reveal the entire graph $H$ and the permutation $\sigma$.
+        \item If $b=1$: The Prover opens only the commitments corresponding to the edges of the Hamiltonian path in $H$.
+    \end{itemize}
+    \item \textbf{Verification:}
+    \begin{itemize}
+        \item If $b=0$, the Verifier checks that $H$ is indeed isomorphic to $G$ via $\sigma$ ($H = \sigma(G)$).
+        \item If $b=1$, the Verifier checks that the revealed edges form a valid Hamiltonian Path in $H$.
+    \end{itemize}
+\end{enumerate}
+\end{protocol}
+
+\subsection{Probabilistic Analysis}
+
+\begin{itemize}
+    \item{\textbf{Completeness: An honest prover with a Hamiltonian path convinces the verifier with high probability.}} \\
+    If the Prover is honest, they know the path in $G$ and the permutation $\sigma$.
+    \begin{itemize}
+        \item If challenged with $b=0$, the Prover simply reveals $\sigma$ and the full graph $H$, which is by definition isomorphic to $G$. The check passes.
+        \item If challenged with $b=1$, the Prover identifies the edges in $H$ that correspond to the path in $G$ (mapped by $\sigma$) and opens them. Since a path exists, the check passes.
+    \end{itemize}
+    Thus, an honest prover succeeds with probability 1.
+
+    \item{\textbf{Soundness: If there is no Hamiltonian path, any cheating prover can only succeed with small probability per round.}} \\
+    Suppose $G$ has no Hamiltonian Path. The cheating Prover must commit to some graph $H$ at the start.
+    \begin{itemize}
+        \item If the Prover commits to a graph $H$ that is isomorphic to $G$, then $H$ also has no Hamiltonian Path. The Prover will fail if the Verifier asks for the path ($b=1$).
+        \item If the Prover commits to a graph $H$ that \textit{does} have a Hamiltonian Path (to cheat on $b=1$), then $H$ cannot be isomorphic to $G$. The Prover will fail if the Verifier asks for the isomorphism ($b=0$).
+    \end{itemize}
+    Since the Prover must commit to $H$ before seeing the random challenge $b$, and $b$ is chosen uniformly, the Prover succeeds with probability at most $1/2$. By repeating the protocol $k$ times, the probability of successful cheating drops to $(1/2)^k$.
+
+    \item{\textbf{Zero-knowledge intuition: The verifier does not learn the actual Hamiltonian path in the original graph.}} \\
+    We analyze what the Verifier sees in each case:
+    \begin{itemize}
+        \item In case $b=0$, the Verifier sees a random graph $H$ isomorphic to $G$. This reveals no information about the specific path within $G$.
+        \item In case $b=1$, the Verifier sees a sequence of edges forming a path on the vertices of $H$. Because $H$ is formed by applying a \textit{random} permutation $\sigma$ to $G$, the vertex indices in the path are uniformly random.
+    \end{itemize}
+    The Verifier effectively sees "a random path on random vertices." This view can be simulated without knowing the secret path in $G$ (simply by generating a random path of length $n$). Since the interaction gives no information distinguishable from a random simulation, the Verifier learns nothing about the specific Hamiltonian Path in the original graph $G$.
+\end{itemize}
+
+%------------------------------------------------------------
+%   RESOURCES
+%------------------------------------------------------------
+\section{Resources we have used to learn the topic}
+
+\begingroup
+\sloppy
+\begin{itemize}
+    \item MIT OpenCourseWare, Lecture on Interactive Proofs and the Sum-Check Protocol
+    \url{https://www.youtube.com/watch?v=iqSMRO78UD0}
+    \item Wikipedia article on Interactive Proof Systems: \url{https://en.wikipedia.org/wiki/Interactive_proof_system}
+    \item Notes on Complexity Theory from UMD: \url{https://cs.umd.edu/~jkatz/complexity/f11/lecture16.pdf}
+    \item Lecture Notes from UCLA on Foundations of Cryptography: \url{https://web.cs.ucla.edu/~rafail/TEACHING/WINTER-2005/L9/L9.pdf}
+    \item YouTube video about Turing Machines: \url{https://www.youtube.com/watch?v=dNRDvLACg5Q}
+\end{itemize}
+\endgroup
+
+\section{Contributions}
+
+This section outlines the distribution of tasks and the verification process for the assignment. 
+
+\begin{table}[h]
+\centering
+% Adjusted widths: 3.5cm for names and 10.5cm for contributions
+\begin{tabular}{|>{\centering\arraybackslash}m{3.5cm}|m{10.5cm}|} 
+\hline
+\textbf{Team Member} & \textbf{Primary Contributions} \\ \hline
+Ömer Ozan Mart          & \begin{itemize}[leftmargin=*]
+                        \item \textbf{Q2:} Interactive Algorithm for Graph Isomorphism.
+                        \item \textbf{Q4:} Building Zero-Knowledge Proofs.
+                        \item \textbf{Q5:} Interactive Proof for Hamiltonian Path.
+                        \vspace{0.4cm} 
+                      \end{itemize} \\ \hline
+Yüksel Ege Boyacı       & \begin{itemize}[leftmargin=*]
+                        \item \textbf{Q1:} Interactive Algorithm for 3-Coloring.
+                        \item \textbf{Q3:} Trick the Verifier for 3–Coloring.
+                        \vspace{0.4cm}
+                      \end{itemize} \\ \hline
+\end{tabular}
+\end{table}
+
+\end{document}

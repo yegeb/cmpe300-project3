@@ -62,7 +62,7 @@ def parse_graph(graph_file: str) -> tuple[int, list[tuple[int, int]], dict[int, 
     return n, edges, adj
 
 # =============================================================================
-# Probing & Verification (The "Attack")
+# Probing & Verification
 # =============================================================================
 
 def probe_verifier(graph_file: str, samples: int = 1000) -> dict[tuple[int, int], int]:
@@ -141,14 +141,14 @@ def run_verification(graph_file: str, coloring_file: str, rounds: int = 50) -> b
         else:
             # Rejection without crash
             out = result.stdout.strip()
-            # print(f"Verification REJECTED. Output: {out[:200]}...") # Optional: uncomment for verbose logs
+            
         return False
     except Exception as e:
         print(f"Exception during verification: {e}")
         return False
 
 # =============================================================================
-# Coloring Algorithms (Optimization)
+# Coloring Algorithms 
 # =============================================================================
 
 def optimize_coloring(
@@ -345,9 +345,7 @@ def main():
         hot_edge_count = len(hot_edges)
         
         for e, count in hot_edges.items():
-            # Heavy penalty for frequent edges. Quadratic scale ensures Hub (Freq 900) 
-            # is infinitely more important than minor hot edges (Freq 10).
-            # 900^2 = 810,000 vs 10^2 = 100.
+            # Heavy penalty for frequent edges. 
             edge_weights[e] = 1 + (count**2 * 100) 
             if count > max_freq: max_freq = count
             

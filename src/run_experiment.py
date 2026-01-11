@@ -311,13 +311,21 @@ def main():
     graph_file = os.path.join(OUTPUT_DIR, "G.txt")
     coloring_file = os.path.join(OUTPUT_DIR, "coloring.txt")
     
+    graphs_dir = os.path.join(OUTPUT_DIR, "graphs")
+    colorings_dir = os.path.join(OUTPUT_DIR, "colorings")
+    
+    if not os.path.exists(graphs_dir):
+        os.makedirs(graphs_dir)
+    if not os.path.exists(colorings_dir):
+        os.makedirs(colorings_dir)
+    
     print(f"Starting experiments with sizes: {list(LARGE_GRAPH_SIZES)}")
     print(f"Configuration: Samples={SAMPLE_COUNT}, Iterations={GREEDY_ITERATIONS}")
     
-    for n in LARGE_GRAPH_SIZES:
-        # Use unique filenames for each size to avoid race conditions if multiple scripts run
-        graph_file = os.path.join(OUTPUT_DIR, f"G_{n}.txt")
-        coloring_file = os.path.join(OUTPUT_DIR, f"coloring_{n}.txt")
+    for i, n in enumerate(LARGE_GRAPH_SIZES, 1):
+        # Use indexed filenames: G_1.txt, G_2.txt...
+        graph_file = os.path.join(graphs_dir, f"G_{i}.txt")
+        coloring_file = os.path.join(colorings_dir, f"coloring_{i}.txt")
 
         start_time = time.time()
         
